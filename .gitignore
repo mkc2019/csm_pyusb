@@ -1,0 +1,8 @@
+venv/
+config.cfg
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+
+view/__pycache__/*.pyc

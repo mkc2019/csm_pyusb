@@ -32,17 +32,11 @@ if __name__ == "__main__":
         sys.exit(1)
     print("Device obtained!")
     device.reset()
-    #
-    # device.clear_halt(0x83)
-    # device.clear_halt(0x02)
 
     """These 2 lines are necessary to set up the communication."""
     byte = b"\x17\x01\x0c\x00\x00\x00\x1a\x01\x19\x00\x1d\x0f\x01\x00\x00\x00\x07\x00\x00\x00\x00\x00\x83\xb9\x92\x38"
-    print(byte)
     device.write(0x02, byte)
     reply = device.read(0x83, 128, 3000)
-    print(reply)
-    print(len(reply))
 
     byte = b"\x17\x01\x0c\x00\x00" \
     b"\x00\x3b\x01\x19\x00\x1d\x01\x03\x00\x00\x00\x28\x00\x00\x00\x00" \
@@ -51,8 +45,7 @@ if __name__ == "__main__":
     b"\x56\x0c\x26\xcf\x21\x39"
     device.write(0x02,byte)
     reply = device.read(0x83, 128, 3000)
-    print(reply)
-    print(len(reply))
+
 
     """Obtain NIBP Data"""
     byte = b"\x17\x01\x0c\x00\x00" \
@@ -124,3 +117,88 @@ if __name__ == "__main__":
     if len(reply) == 720:
         print(reply[707])
         print("Session HR : " + str(convert2BytesToDecimal(reply[706],reply[707])))
+
+    """Get Height Data"""
+    byte = b"\x1b\x00\xa0\xa8\xfb\x4f\x82\x91\xff\xff\x70\x61\x8d\x51\x09\x00" \
+    b"\x00\x01\x00\x0b\x00\x02\x03\x1a\x00\x00\x00\x17\x01\x0c\x00\x00" \
+    b"\x00\x1a\x01\x1a\x00\x1a\x0b\x00\x00\x00\x00\x07\x00\x00\x00\x00" \
+    b"\x00\x73\x53\xdf\x23"
+    device.write(0x02, byte)
+    reply = device.read(0x83,256,3000)
+    if len(reply) == 59:
+        height = convert2BytesToDecimal(reply[45],reply[46]) / 10
+        print(height)
+        print("Height: " + str(height) + " cm")
+
+    """Get Weight Data"""
+    byte = b"\x1b\x00\x60\xf4\x1d\x4e\x82\x91\xff\xff\x00\x00\x00\x00\x09\x00" \
+    b"\x00\x01\x00\x0b\x00\x02\x03\x1a\x00\x00\x00\x17\x01\x0c\x00\x00" \
+    b"\x00\x1a\x01\x1a\x00\x13\x0b\x00\x00\x00\x00\x07\x00\x00\x00\x00" \
+    b"\x00\xfc\xea\x69\xe4"
+
+    device.write(0x02, byte)
+    reply = device.read(0x83,256,3000)
+    if len(reply) == 60:
+        weight = convert2BytesToDecimal(reply[45],reply[46]) / 1000
+        print("Weight: " + str(weight) + " kg")
+
+    """Get General Info"""
+    byte = b"\x1b\x00\x90\xe0\x62\x4e\x82\x91\xff\xff\x00\x00\x00\x00\x09\x00" \
+    b"\x00\x01\x00\x0f\x00\x02\x03\x2b\x00\x00\x00\x17\x01\x0c\x00\x00" \
+    b"\x00\x2b\x01\x1a\x00\x6b\x0b\x00\x00\x00\x00\x18\x00\x00\x00\x00" \
+    b"\x11\x00\x6b\x10\x00\x00\x0b\x00\x64\x00\x00\x04\x00\x00\x00\x01" \
+    b"\xf7\x29\x53\x4b\x7b\xd6"
+    device.write(0x02, byte)
+    reply = device.read(0x83,256,3000)
+    print(reply)
+    ptr = 35
+    try:
+        location_id_len = convert2BytesToDecimal(reply[33],reply[34])
+        location_id_byte = reply[ptr:ptr+location_id_len]
+        location_id = bytes(location_id_byte).decode("utf-8")
+        print(location_id)
+
+        ptr = ptr + location_id_len
+        asset_id_len = convert2BytesToDecimal(reply[ptr],reply[ptr+1])
+        ptr = ptr + 2
+        asset_id_byte = reply[ptr:ptr+asset_id_len]
+        print(asset_id_byte)
+        asset_id = bytes(asset_id_byte).decode("utf-8")
+        print(asset_id)
+
+    except Exception as E:
+        print(E)
+
+    """Get Respiration Rate"""
+    byte = b"\x1b\x00\x20\xd3\xa8\x50\x82\x91\xff\xff\x00\x00\x00\x00\x09\x00" \
+    b"\x00\x01\x00\x16\x00\x02\x03\x1a\x00\x00\x00\x17\x01\x0c\x00\x00" \
+    b"\x00\x1a\x01\x1a\x00\x12\x0b\x00\x00\x00\x00\x07\x00\x00\x00\x00" \
+    b"\x00\x79\xbf\xe0\x52"
+    device.write(0x02, byte)
+    reply = device.read(0x83,256,3000)
+    print(reply)
+    try:
+        respirationRate = reply[49]
+        print("Respiration Rate: " + str(respirationRate))
+    except Exception as E:
+        print(E)
+
+    """Get BMI"""
+    byte = b"\x1b\x00\xa0\x79\x1d\x4b\x82\x91\xff\xff\x00\xd0\xc5\x37\x09\x00" \
+    b"\x00\x01\x00\x1a\x00\x02\x03\x1a\x00\x00\x00\x17\x01\x0c\x00\x00" \
+    b"\x00\x1a\x01\x1a\x00\x11\x0b\x00\x00\x00\x00\x07\x00\x00\x00\x00" \
+    b"\x00\xfe\x51\xac\xd8"
+    device.write(0x02, byte)
+    reply = device.read(0x83,256,3000)
+    print(reply)
+    if len(reply) == 67:
+        height = convert2BytesToDecimal(reply[49],reply[50]) / 10
+        print("Height: " + str(height))
+
+        weight = convert2BytesToDecimal(reply[51],reply[52])
+        print(weight)
+
+        BMI = convert2BytesToDecimal(reply[53],reply[54])
+        print("BMI Index is: " + str(BMI))
+
+    #53-54
